@@ -1,0 +1,98 @@
+// Copyright 2025 Yasser Zabuair.  See LICENSE for details.
+#pragma once
+
+#include <parser/Expr.h>
+
+#include <memory>
+#include <vector>
+
+namespace billiec::parser {
+
+struct FunctionStmt;
+struct ProgramStmt;
+struct ReturnStmt;
+
+struct StmtVisitor {
+    StmtVisitor(){ }
+    virtual ~StmtVisitor(){ }
+    
+    virtual void visit(FunctionStmt& stmt) = 0;
+    virtual void visit(ProgramStmt& stmt) = 0;
+    virtual void visit(const ReturnStmt& stmt) = 0;
+};
+    
+struct Stmt {
+    using PtrType = std::unique_ptr<Stmt>;
+    
+    Stmt(){ }
+    virtual ~Stmt(){ }
+    
+    virtual void accept(StmtVisitor& visitor) = 0;
+};
+
+// ---
+
+struct FunctionStmt: public Stmt {
+    using PtrType = std::unique_ptr<FunctionStmt>;
+    scanner::Token name;
+    std::vector<std::unique_ptr<Stmt>> body;
+    
+    FunctionStmt(const scanner::Token& name,
+                 std::vector<std::unique_ptr<Stmt>> body):
+        name{name},
+        body{std::move(body)} {
+        
+    }
+    
+    static PtrType create(const scanner::Token name,
+                   std::vector<std::unique_ptr<Stmt>> body) {
+        return std::make_unique<FunctionStmt>(name, std::move(body));
+    }
+    
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(*this);
+    }
+};
+
+// ---
+    
+struct ProgramStmt: public Stmt {
+    using PtrType = std::unique_ptr<ProgramStmt>;
+    std::unique_ptr<Stmt> function_definition;
+    
+    ProgramStmt(std::unique_ptr<Stmt> function_definition):
+        function_definition{std::move(function_definition)} {
+        
+    }
+    
+    static PtrType create(std::unique_ptr<Stmt> function_definition) {
+        return std::make_unique<ProgramStmt>(std::move(function_definition));
+    }
+    
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(*this);
+    }
+};
+
+// ---
+
+struct ReturnStmt: public Stmt {
+    using PtrType = std::unique_ptr<ReturnStmt>;
+    std::unique_ptr<Expr> return_expr;
+    
+    ReturnStmt(std::unique_ptr<Expr> return_expr):
+        return_expr{std::move(return_expr)} {
+        
+    }
+    
+    static PtrType create(std::unique_ptr<Expr> return_expr) {
+        return std::make_unique<ReturnStmt>(std::move(return_expr));
+    }
+    
+    void accept(StmtVisitor& visitor) override {
+        visitor.visit(*this);
+    }
+};
+
+} // namepsace billiec::parser
+

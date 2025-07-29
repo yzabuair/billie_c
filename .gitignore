@@ -39,3 +39,6 @@
 
 # debug information files
 *.dwo
+
+# Build stuff we don't care about.
+build/*
