@@ -4,6 +4,7 @@
 #include <codegen/AssemblerAst.h>
 #include <parser/Ast.h>
 
+#include <any>
 #include <map>
 #include <vector>
 
@@ -28,12 +29,11 @@ public:
         return std::move(program_node_assembly_);
     }
     
-    void visit(const parser::ProgramNode& node) override {
-        node.function_definition->accept(*this);
-        program_node_assembly_ = ProgramAssemblerNode::create(std::move(function_node_assembly_));
+    std::any visit(const parser::ProgramNode& node) override {
+        return std::any{ProgramAssemblerNode::create(std::any_cast<FunctionAssemblerNode::PtrType>(node.function_definition->accept(*this)))};
     }
     
-    void visit(const parser::FunctionNode& node) override {
+    std::any visit(const parser::FunctionNode& node) override {
         curr_func_ = node.name.lexeme;
         for(const auto& curr_ast: node.body) {
             curr_ast->accept(*this);
@@ -53,6 +53,10 @@ public:
         }
         auto return_node = ReturnInstructionNode::create();
         instructions_[curr_func_].push_back(std::move(return_node));
+    }
+    
+    void visit(const parser::UnaryNode& node) override {
+        
     }
     
     void visit(const parser::LiteralNode& node) override {

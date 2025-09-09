@@ -19,10 +19,10 @@ private:
 public:
     LanguageParser(std::vector<scanner::Token> tokens);
     
-    AstNode::PtrType parse_program();
+    ProgramNode::PtrType parse_program();
     
 private:
-    AstNode::PtrType parse_function_stmt_();
+    FunctionNode::PtrType parse_function_stmt_();
     std::vector<AstNode::PtrType> parse_block_();
     AstNode::PtrType parse_stmt_();
     AstNode::PtrType parse_return_stmt_();

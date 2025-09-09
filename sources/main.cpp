@@ -5,7 +5,7 @@
 #include "Errors.h"
 #include "RuntimeError.h"
 
-#include <codegen/AssemblyGenerator.h>
+//#include <codegen/AssemblyGenerator.h>
 #include <codegen/AstPrinter.h>
 #include <core/ErrorHelpers.h>
 #include <scanner/TokenScanner.h>
@@ -73,17 +73,17 @@ void run_codegen(const billiec::RuntimeConfig& cfg) {
     billiec::parser::LanguageParser parser{tokens};
     auto program_node = parser.parse_program();
     
-    auto assembly_generator = billiec::codegen::AssemblyGenerator{std::move(program_node)};
-    auto program_assembler_node = assembly_generator.generate_assembler();
+    //auto assembly_generator = billiec::codegen::AssemblyGenerator{std::move(program_node)};
+    //auto program_assembler_node = assembly_generator.generate_assembler();
     
     if (!cfg.output_file.empty()) {
         std::ofstream stream{cfg.output_file};
-        program_assembler_node->generate(stream);
+        //program_assembler_node->generate(stream);
         
         stream.flush();
         stream.close();
     } else {
-        program_assembler_node->generate(std::cout);
+        //program_assembler_node->generate(std::cout);
     }
 }
 
@@ -93,6 +93,7 @@ billiec::RuntimeConfig process_command_line(int argc, char* argv[]) {
     for(int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--help") == 0) {
             print_help();
+            exit(0);
         } else if (std::strcmp(argv[i], "--lex") == 0) {
             config.run_stage = billiec::RunStage::stage_lexer;
         } else if (std::strcmp(argv[i], "--parse") == 0) {

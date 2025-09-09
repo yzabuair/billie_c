@@ -5,7 +5,8 @@ namespace billiec::parser {
 
 enum class errc {
     parser_no_error = 0x00,
-    parser_unexpected_token
+    parser_unexpected_token,
+    parser_invalid_expression
 };
 
 std::error_code make_error_code(errc err);

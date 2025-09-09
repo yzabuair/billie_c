@@ -42,6 +42,14 @@ void TokenScanner::get_next_token_() {
         case ';':
             add_token_(TokenType::SEMICOLON);
             break;
+        
+        case '-':
+            add_token_(TokenType::MINUS);
+            break;
+            
+        case '~':
+            add_token_(TokenType::COMPLEMENT);
+            break;
             
         case '\n':
         case '\r':

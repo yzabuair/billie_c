@@ -23,6 +23,8 @@ struct ErrorCategory: public std::error_category
                 return "parser_no_error";
             case errc::parser_unexpected_token:
                 return "parser_unexpected_token";
+            case errc::parser_invalid_expression:
+                return "parser_invalid_expression";
             default:
                 return "Unknown Error";
         }

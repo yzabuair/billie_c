@@ -3,7 +3,9 @@
 
 #include <scanner/Token.h>
 
+#include <any>
 #include <memory>
+#include <variant>
 #include <vector>
 
 namespace billiec::parser {
@@ -11,67 +13,64 @@ namespace billiec::parser {
 struct ProgramNode;
 struct FunctionNode;
 struct ReturnNode;
+struct UnaryNode;
 struct LiteralNode;
 
-struct AstVisitor {
-    AstVisitor(){ }
-    virtual ~AstVisitor(){ }
+
+template <typename R>
+struct AstNodeVisitor {
+    using ReturnType = R;
     
-    virtual void visit(const ProgramNode& node) = 0;
-    virtual void visit(const FunctionNode& node) = 0;
-    virtual void visit(const ReturnNode& node) = 0;
-    virtual void visit(const LiteralNode& node) = 0;
+    AstNodeVisitor() = default;
+    virtual ~AstNodeVisitor() = default;
+    
+    virtual R visit(const ProgramNode& node) = 0;
+    virtual R visit(const FunctionNode& node) = 0;
+    virtual R visit(const ReturnNode& node) = 0;
+    virtual R visit(const UnaryNode& node) = 0;
+    virtual R visit(const LiteralNode& node) = 0;
 };
-    
+
 struct AstNode {
     using PtrType = std::unique_ptr<AstNode>;
     
-    AstNode(){ }
-    virtual ~AstNode(){ }
-    
-    virtual void accept(AstVisitor& visitor) = 0;
+    AstNode() = default;
+    virtual ~AstNode() = default;
 };
 
 // ---
 
-struct ProgramNode: public AstNode {
-    using PtrType = std::unique_ptr<ProgramNode>;
-    std::unique_ptr<AstNode> function_definition;
+struct LiteralNode: public AstNode  {
+    using PtrType = std::unique_ptr<LiteralNode>;
     
-    ProgramNode(std::unique_ptr<AstNode> function_definition):
-        function_definition{std::move(function_definition)} {        
+    scanner::TokenValueType value;
+
+    LiteralNode(const scanner::TokenValueType& value):
+        value{value} {
     }
     
-    static PtrType create(std::unique_ptr<AstNode> function_definition) {
-        return std::make_unique<ProgramNode>(std::move(function_definition));
-    }
-    
-    void accept(AstVisitor& visitor) override {
-        visitor.visit(*this);
+    static PtrType create(const scanner::TokenValueType& value) {
+        return std::make_unique<LiteralNode>(value);
     }
 };
 
 // ---
 
-struct FunctionNode: public AstNode {
-    using PtrType = std::unique_ptr<FunctionNode>;
-    scanner::Token name;
-    std::vector<std::unique_ptr<AstNode>> body;
+struct UnaryNode: public AstNode {
+    using PtrType = std::unique_ptr<UnaryNode>;
     
-    FunctionNode(const scanner::Token& name,
-                 std::vector<std::unique_ptr<AstNode>> body):
-        name{name},
-        body{std::move(body)} {
-        
+    scanner::Token operation;
+    AstNode::PtrType expr;
+
+    UnaryNode(const scanner::Token& operation,
+              AstNode::PtrType expr):
+        operation{operation},
+        expr{std::move(expr)} {
     }
     
-    static PtrType create(const scanner::Token name,
-                   std::vector<std::unique_ptr<AstNode>> body) {
-        return std::make_unique<FunctionNode>(name, std::move(body));
-    }
-    
-    void accept(AstVisitor& visitor) override {
-        visitor.visit(*this);
+    static PtrType create(const scanner::Token& operation,
+                          AstNode::PtrType expr) {
+        return std::make_unique<UnaryNode>(operation, std::move(expr));
     }
 };
 
@@ -79,44 +78,81 @@ struct FunctionNode: public AstNode {
 
 struct ReturnNode: public AstNode {
     using PtrType = std::unique_ptr<ReturnNode>;
-    scanner::Token token;
-    std::unique_ptr<AstNode> return_expr;
     
+    scanner::Token token;
+    AstNode::PtrType return_expr;
+
     ReturnNode(const scanner::Token& token,
-               std::unique_ptr<AstNode> return_expr):
+               AstNode::PtrType return_expr):
         token{token},
         return_expr{std::move(return_expr)} {
-        
     }
     
     static PtrType create(const scanner::Token& token,
-                          std::unique_ptr<AstNode> return_expr) {
+                          AstNode::PtrType return_expr) {
         return std::make_unique<ReturnNode>(token, std::move(return_expr));
     }
+
+};
+
+// ---
+
+struct FunctionNode: public AstNode {
+    using PtrType = std::unique_ptr<FunctionNode>;
+    scanner::Token name;
+    std::vector<AstNode::PtrType> body;
     
-    void accept(AstVisitor& visitor) override {
-        visitor.visit(*this);
+    FunctionNode(const scanner::Token& name,
+                 std::vector<AstNode::PtrType> body):
+        name{name},
+        body{std::move(body)} {
+    }
+    
+    static PtrType create(const scanner::Token& name,
+                          std::vector<AstNode::PtrType> body) {
+        return std::make_unique<FunctionNode>(name, std::move(body));
     }
 };
 
 // ---
 
-struct LiteralNode: public AstNode {
-    using PtrType = std::unique_ptr<LiteralNode>;
-    scanner::TokenValueType value;
+struct ProgramNode: public AstNode {
+    using PtrType = std::unique_ptr<ProgramNode>;
+    AstNode::PtrType function_node;
     
-    LiteralNode(const scanner::TokenValueType& value):
-        value{value} {
-        
+    ProgramNode(AstNode::PtrType function_node):
+        function_node{std::move(function_node)} {
     }
     
-    static PtrType create(const scanner::TokenValueType& value) {
-        return std::make_unique<LiteralNode>(value);
+    static PtrType create(AstNode::PtrType function_node) {
+        return std::make_unique<ProgramNode>(std::move(function_node));
     }
     
-    void accept(AstVisitor& visitor) override {
-        visitor.visit(*this);
-    }
 };
+
+// ---
+
+template <typename T, typename U>
+typename T::ReturnType accept(T& visitor, const U& node) {
+    return visitor.visit(node);
+}
+
+template <typename T>
+typename T::ReturnType accept(T& visitor, const AstNode::PtrType& node) {
+    if (auto actual_node = dynamic_cast<const ProgramNode*>(node.get())) {
+        return visitor.visit(*actual_node);
+    } else if (auto actual_node = dynamic_cast<const FunctionNode*>(node.get())) {
+        return visitor.visit(*actual_node);
+    } else if (auto actual_node = dynamic_cast<const ReturnNode*>(node.get())) {
+        return visitor.visit(*actual_node);
+    } else if (auto actual_node = dynamic_cast<const UnaryNode*>(node.get())) {
+        return visitor.visit(*actual_node);
+    } else if (auto actual_node = dynamic_cast<const LiteralNode*>(node.get())) {
+        return visitor.visit(*actual_node);
+    } else {
+        // TODO: Error...
+        std::cout << "Hey, what happen\n";
+    }
+}
 
 } // namespace billiec::parser

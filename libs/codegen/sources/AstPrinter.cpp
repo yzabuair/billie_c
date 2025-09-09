@@ -4,48 +4,72 @@
 #include <scanner/Token.h>
 
 #include <iostream>
+#include <sstream>
 
 namespace billiec::codegen {
 
-AstPrinter::AstPrinter(std::unique_ptr<parser::AstNode> program_node):
-program_node_{std::move(program_node)} {
+AstPrinter::AstPrinter(std::unique_ptr<parser::ProgramNode> program_node):
+    program_node_{std::move(program_node)} {
     
 }
 
 void AstPrinter::print_ast() {
-    program_node_->accept(*this);
+    std::cout <<  parser::accept(*this, *program_node_);
 }
 
-void AstPrinter::visit(const parser::ProgramNode& node) {
-    std::cout << "Program{\n";
+std::string AstPrinter::visit(const parser::ProgramNode& node) {
+    std::stringstream stream;
     
-    node.function_definition->accept(*this);
+    stream << "Program{\n";
     
-    std::cout << "}\n";
-
+    stream << parser::accept(*this, node.function_node);
+    
+    stream << "}\n";
+    
+    return stream.str();
 }
 
-void AstPrinter::visit(const parser::FunctionNode& node) {
-    std::cout << "\t" << std::get<std::string>(node.name.token_value) << "{\n";
+std::string AstPrinter::visit(const parser::FunctionNode& node) {
+    std::stringstream stream;
+    
+    stream << "\t" << std::get<std::string>(node.name.token_value) << "{\n";
     
     for(const auto& curr_node: node.body) {
-        curr_node->accept(*this);
+        stream << "\t\t" << accept(*this, curr_node);
     }
     
-    std::cout << "\t}\n";
+    stream << "\t" << "}\n";
+    
+    return stream.str();
 }
 
-void AstPrinter::visit(const parser::ReturnNode& node) {
-    std::cout << "\t\t return ";
+std::string AstPrinter::visit(const parser::ReturnNode& node) {
+    std::stringstream stream;
     
-    node.return_expr->accept(*this);
+    stream << node.token.lexeme;
     
-    std::cout << "\n";
+    stream << " " << accept(*this, node.return_expr);
+    
+    stream << "\n";
+    
+    return stream.str();
 }
 
-void AstPrinter::visit(const parser::LiteralNode& node) {
+std::string AstPrinter::visit(const parser::UnaryNode& node) {
+    std::stringstream stream;
+    
+    stream << node.operation.lexeme << accept(*this, node.expr);
+    
+    return stream.str();
+}
+
+std::string AstPrinter::visit(const parser::LiteralNode& node) {
+    std::stringstream stream;
+    
     using billiec::scanner::operator<<;
-    std::cout << node.value;
+    stream << node.value;
+    
+    return stream.str();
 }
 
 } // namespace billiec::codegen

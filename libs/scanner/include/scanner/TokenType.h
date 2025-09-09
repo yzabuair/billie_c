@@ -14,7 +14,7 @@ enum class TokenType {
 
     // One or two character tokens.
     BANG, BANG_EQUAL, EQUAL, EQUAL_EQUAL,
-    GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
+    GREATER, GREATER_EQUAL, LESS, LESS_EQUAL, COMPLEMENT,
 
     // Literals.
     IDENTIFIER, STRING, NUMBER,
@@ -50,10 +50,10 @@ inline std::ostream& operator<<(std::ostream& ostream, const TokenType& type) {
             ostream << "DOT";
             break;
         case TokenType::MINUS:
-            ostream << "MINUS";
+            ostream << "-";
             break;
         case TokenType::PLUS:
-            ostream << "PLUS";
+            ostream << "+";
             break;
         case TokenType::SEMICOLON:
             ostream << "SEMICOLON";
@@ -87,6 +87,9 @@ inline std::ostream& operator<<(std::ostream& ostream, const TokenType& type) {
             break;
         case TokenType::LESS_EQUAL:
             ostream << "<=";
+            break;
+        case TokenType::COMPLEMENT:
+            ostream << "~";
             break;
         case TokenType::IDENTIFIER:
             ostream << "IDENTIFIER";
