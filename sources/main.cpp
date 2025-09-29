@@ -5,8 +5,10 @@
 #include "Errors.h"
 #include "RuntimeError.h"
 
-//#include <codegen/AssemblyGenerator.h>
+#include <codegen/AssemblyGenerator.h>
+#include <codegen/AssemblerPassEmit.h>
 #include <codegen/AstPrinter.h>
+#include <codegen/TackyGenerator.h>
 #include <core/ErrorHelpers.h>
 #include <scanner/TokenScanner.h>
 #include <parser/LanguageParser.h>
@@ -73,17 +75,23 @@ void run_codegen(const billiec::RuntimeConfig& cfg) {
     billiec::parser::LanguageParser parser{tokens};
     auto program_node = parser.parse_program();
     
-    //auto assembly_generator = billiec::codegen::AssemblyGenerator{std::move(program_node)};
-    //auto program_assembler_node = assembly_generator.generate_assembler();
+    auto tacky_generator = billiec::codegen::TackyGenerator{std::move(program_node)};
+    auto tacky_node = tacky_generator.generate_tacky();
+    auto assembly_generator = billiec::codegen::AssemblyGenerator{std::move(tacky_node)};
+    auto instructions = assembly_generator.generate_assembly();
+    
     
     if (!cfg.output_file.empty()) {
         std::ofstream stream{cfg.output_file};
-        //program_assembler_node->generate(stream);
+        //assembler_node->emit(stream);
+        auto emit = billiec::codegen::AssemblerPassEmit(instructions, stream);
+        emit.process();
         
         stream.flush();
         stream.close();
     } else {
-        //program_assembler_node->generate(std::cout);
+        auto emit = billiec::codegen::AssemblerPassEmit(instructions, std::cout);
+        emit.process();
     }
 }
 

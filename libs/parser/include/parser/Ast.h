@@ -4,6 +4,7 @@
 #include <scanner/Token.h>
 
 #include <any>
+#include <functional>
 #include <memory>
 #include <variant>
 #include <vector>

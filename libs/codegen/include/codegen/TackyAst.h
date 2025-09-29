@@ -1,6 +1,7 @@
 // Copyright 2025 Yasser Zabuair.  See LICENSE for details.
 #pragma once
 
+#include <codegen/AssemblerAst.h>
 #include <scanner/Token.h>
 
 #include <iostream>
@@ -19,13 +20,26 @@ struct VarTackyNode;
 
 // ---
 
+struct TackyNodeVisitor {
+    TackyNodeVisitor() = default;
+    virtual ~TackyNodeVisitor() = default;
+    
+    virtual std::unique_ptr<AssemblerNode> visit(const ProgramTackyNode& node) = 0;
+    virtual std::unique_ptr<AssemblerNode> visit(const FunctionTackyNode& node) = 0;
+    virtual std::unique_ptr<AssemblerNode> visit(const ReturnTackyNode& node) = 0;
+    virtual std::unique_ptr<AssemblerNode> visit(const UnaryTackyNode& node) = 0;
+    virtual std::unique_ptr<AssemblerNode> visit(const IntConstTackyNode& node) = 0;
+    virtual std::unique_ptr<AssemblerNode> visit(const VarTackyNode& node) = 0;
+};
+
+
 struct TackyNode {
     using PtrType = std::unique_ptr<TackyNode>;
     
     TackyNode() = default;
     virtual ~TackyNode() = default;
     
-    virtual std::ostream& generate(std::ostream& ostream) = 0;
+    virtual std::unique_ptr<AssemblerNode> accept(TackyNodeVisitor& visitor) = 0;
 };
 
 // ---
@@ -42,8 +56,8 @@ struct ProgramTackyNode: public TackyNode {
         return std::make_unique<ProgramTackyNode>(std::move(function_definition));
     }
     
-    std::ostream& generate(std::ostream& ostream) override {
-        return ostream;
+    std::unique_ptr<AssemblerNode> accept(TackyNodeVisitor& visitor) override {
+        return visitor.visit(*this);
     }
 };
 
@@ -65,8 +79,8 @@ struct FunctionTackyNode: public TackyNode {
         return std::make_unique<FunctionTackyNode>(name, std::move(instructions));
     }
     
-    std::ostream& generate(std::ostream& ostream) override {
-        return ostream;
+    std::unique_ptr<AssemblerNode> accept(TackyNodeVisitor& visitor) override {
+        return visitor.visit(*this);
     }
 };
 
@@ -84,8 +98,8 @@ struct ReturnTackyNode: public TackyNode {
         return std::make_unique<ReturnTackyNode>(std::move(return_expr));
     }
     
-    std::ostream& generate(std::ostream& ostream) override {
-        return ostream;
+    std::unique_ptr<AssemblerNode> accept(TackyNodeVisitor& visitor) override {
+        return visitor.visit(*this);
     }
 };
 
@@ -111,8 +125,8 @@ struct UnaryTackyNode: public TackyNode {
         return std::make_unique<UnaryTackyNode>(operation, std::move(src), std::move(dst));
     }
     
-    std::ostream& generate(std::ostream& ostream) override {
-        return ostream;
+    std::unique_ptr<AssemblerNode> accept(TackyNodeVisitor& visitor) override {
+        return visitor.visit(*this);
     }
 };
 
@@ -129,33 +143,30 @@ struct IntConstTackyNode: public TackyNode {
         return std::make_unique<IntConstTackyNode>(value);
     }
     
-    std::ostream& generate(std::ostream& ostream) override {
-        return ostream;
+    std::unique_ptr<AssemblerNode> accept(TackyNodeVisitor& visitor) override {
+        return visitor.visit(*this);
     }
 };
 
 // ---
 
 struct VarTackyNode: public TackyNode {
-    using PtryType = std::unique_ptr<VarTackyNode>;
-    scanner::Token var_token;
+    using PtrType = std::unique_ptr<VarTackyNode>;
+    std::string var_name;
     
-    VarTackyNode(const scanner::Token& var_token): var_token{var_token} {
+    VarTackyNode(const std::string& var_name): var_name{var_name} {
     }
     
-    static PtrType create(const scanner::Token& var_token) {
-        return std::make_unique<VarTackyNode>(var_token);
+    static PtrType create(const std::string& var_name) {
+        return std::make_unique<VarTackyNode>(var_name);
     }
     
-    std::ostream& generate(std::ostream& ostream) override {
-        return ostream;
+    std::unique_ptr<AssemblerNode> accept(TackyNodeVisitor& visitor) override {
+        return visitor.visit(*this);
     }
 };
 
-
-
-
-
+// ---
 
 
 } // namespace billiec::codegen

@@ -5,12 +5,15 @@
 #include <parser/Ast.h>
 
 #include <map>
+#include <sstream>
+#include <string>
 #include <vector>
 
 namespace billiec::codegen {
 
 class TackyGenerator: public parser::AstNodeVisitor<TackyNode::PtrType> {
     parser::AstNode::PtrType program_node_;
+    int curr_tmp_num_{0};
     
 public:
     TackyGenerator(parser::AstNode::PtrType program_node):
@@ -39,11 +42,27 @@ public:
     }
     
     TackyNode::PtrType visit(const parser::UnaryNode& node) override {
+        using namespace std::string_literals;
+        std::vector<TackyNode::PtrType> instructions;
         
+        auto src = parser::accept(*this, node.expr);
+        auto dst_name = generate_temp_name_();
+        auto dst = VarTackyNode::create(dst_name);
+        return UnaryTackyNode::create(node.operation, std::move(src), std::move(dst));
     }
     
     TackyNode::PtrType visit(const parser::LiteralNode& node) override {
         return IntConstTackyNode::create(std::get<int>(node.value));
+    }
+    
+private:
+    
+    std::string generate_temp_name_() {
+        std::stringstream stream;
+        
+        stream << "tmp." << curr_tmp_num_++;
+        
+        return stream.str();
     }
 };
 

@@ -60,7 +60,7 @@ AstNode::PtrType LanguageParser::parse_expr_() {
     if (match_({scanner::TokenType::NUMBER})) {
         return parse_literal_expr_();
     } else if (match_({scanner::TokenType::MINUS, scanner::TokenType::COMPLEMENT})) {
-        auto token = peek_();
+        auto token = previous_();
         auto expr = parse_expr_();
         return parser::UnaryNode::create(token, std::move(expr));
     } else if (match_({scanner::TokenType::LEFT_PAREN})) {
