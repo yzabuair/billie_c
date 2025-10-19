@@ -22,11 +22,11 @@ struct AssemblerPassPseudoRegister {
             if (FunctionAssemblerNode* func_node = dynamic_cast<FunctionAssemblerNode*>(curr_ins.get())) {
                 for(auto& func_ins: func_node->instructions) {
                     if (MovInstructionNode* mov_ins = dynamic_cast<MovInstructionNode*>(func_ins.get())) {
-                        process_move_node(*mov_ins);
+                        process_mov_node_(*mov_ins);
                     } else if (CompoundAssemblerNode* compound = dynamic_cast<CompoundAssemblerNode*>(func_ins.get())) {
                         for(auto& curr_ins: compound) {
                             if (MovInstructionNode* mov_ins = dynamic_cast<MovInstructionNode*>(func_ins.get())) {
-                                process_move_node(*mov_ins);
+                                process_mov_node_(*mov_ins);
                             }
                         }
                     }
@@ -44,11 +44,8 @@ struct AssemblerPassPseudoRegister {
     }
     
 private:
-    void process_instructions(std::vector<AssemblerNode::PtrType>& instructinos) {
-        
-    }
     
-    void process_move_node(MovInstructionNode& mov_ins) {
+    void process_mov_node_(MovInstructionNode& mov_ins) {
         
     }
 };
