@@ -1,12 +1,13 @@
 // Copyright 2025, Yasser Zabuair.  See LICENSE for detials.
 
-#include "RuntimeConfig.h"
-
 #include "Errors.h"
+#include "RuntimeConfig.h"
 #include "RuntimeError.h"
 
 #include <codegen/AssemblyGenerator.h>
 #include <codegen/AssemblerPassEmit.h>
+#include <codegen/AssemblerPassFixInstructions.h>
+#include <codegen/AssemblerPassPseudoRegister.h>
 #include <codegen/AstPrinter.h>
 #include <codegen/TackyGenerator.h>
 #include <core/ErrorHelpers.h>
@@ -77,20 +78,26 @@ void run_codegen(const billiec::RuntimeConfig& cfg) {
     
     auto tacky_generator = billiec::codegen::TackyGenerator{std::move(program_node)};
     auto tacky_node = tacky_generator.generate_tacky();
+    
     auto assembly_generator = billiec::codegen::AssemblyGenerator{std::move(tacky_node)};
     auto instructions = assembly_generator.generate_assembly();
     
+    auto pseudo_register_pass = billiec::codegen::AssemblerPassPseudoRegister{std::move(instructions)};
+    auto stack_offset = pseudo_register_pass.process();
+    
+    auto fix_instructions_pass = billiec::codegen::AssemblerPassFixInstructions{std::move(pseudo_register_pass.instructions), stack_offset};
+    fix_instructions_pass.process();
     
     if (!cfg.output_file.empty()) {
         std::ofstream stream{cfg.output_file};
         //assembler_node->emit(stream);
-        auto emit = billiec::codegen::AssemblerPassEmit(instructions, stream);
+        auto emit = billiec::codegen::AssemblerPassEmit(fix_instructions_pass.instructions, stream);
         emit.process();
         
         stream.flush();
         stream.close();
     } else {
-        auto emit = billiec::codegen::AssemblerPassEmit(instructions, std::cout);
+        auto emit = billiec::codegen::AssemblerPassEmit(fix_instructions_pass.instructions, std::cout);
         emit.process();
     }
 }

@@ -6,48 +6,24 @@
 #include <map>
 #include <vector>
 
-namespace billie::codegen {
+namespace billiec::codegen {
 
 struct AssemblerPassPseudoRegister {
-    std::vector<AssemblerNode::PtrType>& instructions;
+    std::vector<AssemblerNode::PtrType> instructions;
     std::vector<std::pair<std::string, int>> offsets;
     
-    AssemblerPassPseudoRegister(std::vector<AssemblerNode::PtrType>& instructions): instruction{instructions} {
-        
+    AssemblerPassPseudoRegister(std::vector<AssemblerNode::PtrType> instructions): instructions{std::move(instructions)} {
     }
     
-    int process() {
-        // Look for all pseudo-registers and replace them with their offset.
-        for(auto& curr_ins: instructions) {
-            if (FunctionAssemblerNode* func_node = dynamic_cast<FunctionAssemblerNode*>(curr_ins.get())) {
-                for(auto& func_ins: func_node->instructions) {
-                    if (MovInstructionNode* mov_ins = dynamic_cast<MovInstructionNode*>(func_ins.get())) {
-                        process_mov_node_(*mov_ins);
-                    } else if (CompoundAssemblerNode* compound = dynamic_cast<CompoundAssemblerNode*>(func_ins.get())) {
-                        for(auto& curr_ins: compound) {
-                            if (MovInstructionNode* mov_ins = dynamic_cast<MovInstructionNode*>(func_ins.get())) {
-                                process_mov_node_(*mov_ins);
-                            }
-                        }
-                    }
-                }
-                
-            }
-        }
-        
-        if (offsets.empty()) {
-            return 0;
-        }
-        
-        // Return offset of the last variable we saw, so we know how much to allocate.
-        return offsets.back().second;
-    }
+    int process();
     
 private:
-    
-    void process_mov_node_(MovInstructionNode& mov_ins) {
-        
-    }
+    void process_node_(AssemblerNode::PtrType& curr_node);
+    void visit_node_(CompoundAssemblerNode& node);
+    void visit_node_(ProgramAssemblerNode& node);
+    void visit_node_(FunctionAssemblerNode& node);
+    void visit_node_(MovInstructionNode& node);
+    int get_offset_(const std::string& pseudo_register);
 };
 
 } // namespace billie::codegen

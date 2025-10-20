@@ -179,16 +179,31 @@ struct UnaryInstructionNode: public AssemblerNode {
 
 // ---
 
-struct AllocateStack: public AssemblerNode {
-    using PtrType = std::unique_ptr<AllocateStack>;
+struct AllocateStackInstructionNode: public AssemblerNode {
+    using PtrType = std::unique_ptr<AllocateStackInstructionNode>;
     int size{0};
     
-    AllocateStack(int size): size{size} {
+    AllocateStackInstructionNode(int size): size{size} {
         
     }
     
     static PtrType create(int size) {
-        return std::make_unique<AllocateStack>(size);
+        return std::make_unique<AllocateStackInstructionNode>(size);
+    }
+};
+
+// ---
+
+struct DeAllocateStackInstructionNode: public AssemblerNode {
+    using PtrType = std::unique_ptr<DeAllocateStackInstructionNode>;
+    int size{0};
+    
+    DeAllocateStackInstructionNode(int size): size{size} {
+        
+    }
+    
+    static PtrType create(int size) {
+        return std::make_unique<DeAllocateStackInstructionNode>(size);
     }
 };
 
@@ -197,10 +212,8 @@ struct AllocateStack: public AssemblerNode {
 struct PseudoRegister: public AssemblerNode {
     using PtrType = std::unique_ptr<PseudoRegister>;
     std::string identifier;
-    int stack_offset{0};
     
     PseudoRegister(const std::string& identifier): identifier{identifier} {
-        
     }
     
     static PtrType create(const std::string& identifier) {
@@ -209,6 +222,33 @@ struct PseudoRegister: public AssemblerNode {
 };
 
 // ---
+
+struct Stack: public AssemblerNode {
+    using PtrType = std::unique_ptr<Stack>;
+    int offset{0};
+    
+    Stack(int offset): offset{offset} {
+    }
+    
+    static PtrType create(int offset) {
+        return std::make_unique<Stack>(offset);
+    }
+};
+
+// ---
+
+struct StoreInstructionNode: public AssemblerNode {
+    using PtrType = std::unique_ptr<StoreInstructionNode>;
+    int stack_offset;
+    
+    StoreInstructionNode(int offset): stack_offset{offset} {
+    }
+    
+    static PtrType create(int offset) {
+        return std::make_unique<StoreInstructionNode>(offset);
+    }
+    
+};
 
 
 } // namespace billiec::codegen

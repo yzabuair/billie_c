@@ -28,8 +28,10 @@ private:
     void visit_node_(LiteralInstructionNode& node);
     void visit_node_(RegisterInstructionNode& node);
     void visit_node_(UnaryInstructionNode& node);
-    void visit_node_(AllocateStack& node);
+    void visit_node_(AllocateStackInstructionNode& node);
+    void visit_node_(DeAllocateStackInstructionNode& node);
     void visit_node_(PseudoRegister& node);
+    void visit_node_(Stack& node);
 };
 
 } // namespace billiec::codegen

@@ -25,14 +25,10 @@ std::unique_ptr<AssemblerNode> AssemblyGenerator::visit(const FunctionTackyNode&
     return FunctionAssemblerNode::create(node.name, std::move(instructions));
 }
 
-std::unique_ptr<AssemblerNode> AssemblyGenerator::visit(const ReturnTackyNode& node) {
-    auto mov = MovInstructionNode::create(node.return_expr->accept(*this),
-                                          RegisterInstructionNode::create(RegisterInstructionNode::Register::W0));
-    auto ret = ReturnInstructionNode::create();
-    
+std::unique_ptr<AssemblerNode> AssemblyGenerator::visit(const ReturnTackyNode& node) {    
     std::vector<AssemblerNode::PtrType> instructions;
-    instructions.push_back(std::move(mov));
-    instructions.push_back(std::move(ret));
+    instructions.push_back(node.return_expr->accept(*this));
+    instructions.push_back(ReturnInstructionNode::create());
     
     return CompoundAssemblerNode::create(std::move(instructions));
 }
